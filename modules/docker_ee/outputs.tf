@@ -1,7 +1,3 @@
-output "slb_web_public_ip" {
-  value = "${alicloud_slb.web.address}"
-}
-
-output "bastion_host_public_ip " {
-  value = "${alicloud_instance.bastion.public_ip }"
-}
+# output "docker_ucp_eip" {
+#   value = "${alicloud_eip.docker_ucp.ip_address}"
+# }

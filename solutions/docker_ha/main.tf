@@ -5,4 +5,5 @@ module "docker_ee" {
   vswitchs_ids = "${var.vswitchs_ids}"
   image_id     = "${var.image_id}"
   ssh_password = "${var.ssh_password}"
+  docker_ee_url = "${var.docker_ee_url}"
 }

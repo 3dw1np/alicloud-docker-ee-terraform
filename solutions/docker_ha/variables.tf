@@ -18,3 +18,7 @@ variable "image_id" {
 variable "ssh_password" {
   description = "Ssh password for the hosts"
 }
+
+variable "docker_ee_url" {
+  description = "Url of Docker Enterprise Edition for Ubuntu"
+}

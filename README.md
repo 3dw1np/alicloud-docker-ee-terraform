@@ -62,9 +62,16 @@ terraform plan|apply|destroy \
 ```bash
 terraform init solutions/docker_ha
 terraform plan|apply|destroy \
+  -var 'ssh_password=<SSH_PASSWORD>' \
+  -var 'docker_ee_url=<DOCKER_EE_URL>' \
   -var-file=parameters/docker_ha.tfvars \
   -state=states/docker_ha.tfstate \
   solutions/docker_ha
 ```
+
+### Get Docker Enterprise Edition for Ubuntu Trial Url
+https://docs.docker.com/install/linux/docker-ee/ubuntu/
+
+
 
 ## Issues
