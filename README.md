@@ -58,6 +58,10 @@ terraform plan|apply|destroy \
   solutions/base_vpc
 ```
 
+### Get Docker Enterprise Edition for Ubuntu Trial Url
+Please follow the prerequisites to get your trial access of Docker EE :
+[https://docs.docker.com/install/linux/docker-ee/ubuntu/]()
+
 ### Docker EE with UCP (Universal Control Plane) and DTR (Docker Trusted Registry)
 ```bash
 terraform init solutions/docker_ha
@@ -69,14 +73,25 @@ terraform plan|apply|destroy \
   solutions/docker_ha
 ```
 
-### Get Docker Enterprise Edition for Ubuntu Trial Url
-https://docs.docker.com/install/linux/docker-ee/ubuntu/
-
 ### Add worker nodes
-https://docs.docker.com/ee/ucp/admin/install/#step-7-join-worker-nodes
+Default login: admin / admindocker
+To finalise the setup of the cluster by adding the worker nodes, you need to login into the UCP web ui and follow:
+[https://docs.docker.com/ee/ucp/admin/install/#step-7-join-worker-nodes]()
 
+
+### Setup SSL
+https://docs.docker.com/datacenter/dtr/2.0/configure/config-security/#install-registry-certificates-on-client-docker-daemons
+```bash
+export DOMAIN_NAME=dtr.docker.alicloudlabs.win
+export DOMAIN_NAME=dtr.yourdomain.com
+openssl s_client -connect $DOMAIN_NAME:443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | sudo tee /usr/local/share/ca-certificates/$DOMAIN_NAME.crt
+sudo update-ca-certificates
+``
 
 ### Setup Docker Trusted Registry (DTR) on a worker node
-https://docs.docker.com/ee/dtr/admin/install/
+Choose one node worker already added to the cluster and then follow:
+[https://docs.docker.com/ee/dtr/admin/install/]()
+
+You can set the option "“Disabled TLS verification For UCP" on installing DTR to avoid issue with the UDP certificate.
 
 ## Issues
