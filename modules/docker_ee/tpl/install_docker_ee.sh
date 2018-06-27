@@ -3,7 +3,6 @@
 echo "Install Docker EE ..." >> /var/log/bootstrap.log 2>&1
 
 DOCKER_EE_URL="${DOCKER_EE_URL}"
-PRIVATE_IPV4=`/usr/bin/curl -s http://100.100.100.200/latest/meta-data/private-ipv4` >> /var/log/bootstrap.log 2>&1
 
 # Follow the setup: https://docs.docker.com/install/linux/docker-ee/ubuntu/
 apt-get update >> /var/log/bootstrap.log 2>&1

@@ -91,9 +91,10 @@ resource "alicloud_security_group_rule" "allow_ssh_access" {
   cidr_ip           = "0.0.0.0/0"
 }
 
-### Docker UCP
-resource "alicloud_instance" "docker_ucp" {
-  instance_name              = "${var.name}_srv"
+### Docker manager UCP
+resource "alicloud_instance" "docker_ucp_manager" {
+  host_name                  = "manager"
+  instance_name              = "${var.name}_manager_srv"
   instance_type              = "ecs.sn1ne.2xlarge"
   system_disk_category       = "cloud_ssd"
   system_disk_size           = 40
@@ -103,20 +104,49 @@ resource "alicloud_instance" "docker_ucp" {
   internet_max_bandwidth_out = 1
 
   security_groups            = ["${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
-  user_data                  = "${data.template_cloudinit_config.docker_ucp.rendered}"
+  user_data                  = "${data.template_cloudinit_config.docker_ucp_manager.rendered}"
   password                   = "${var.ssh_password}"
 }
 
-# resource "alicloud_eip" "docker_ucp" {
+# resource "alicloud_eip" "docker_ucp_manager" {
 #   bandwidth            = "5"
 #   internet_charge_type = "PayByBandwidth"
 # }
 
-# resource "alicloud_eip_association" "docker_ucp" {
-#   allocation_id = "${alicloud_eip.docker_ucp.id}"
-#   instance_id   = "${alicloud_instance.docker_ucp.id}"
+# resource "alicloud_eip_association" "docker_ucp_manager" {
+#   allocation_id = "${alicloud_eip.docker_ucp_manager.id}"
+#   instance_id   = "${alicloud_instance.docker_ucp_manager.id}"
 # }
 
+### Docker worker (need manual setup UCP and only one DTR)
+resource "alicloud_instance" "docker_wkr" {
+  host_name                  = "worker${count.index}"
+  instance_name              = "${var.name}_worker_${count.index}_srv"
+  instance_type              = "ecs.sn1ne.2xlarge"
+  system_disk_category       = "cloud_ssd"
+  system_disk_size           = 40
+  image_id                   = "${var.image_id}"
+  count                      = 3
+
+  vswitch_id                 = "${element(var.vswitchs_ids, 0)}"
+  internet_max_bandwidth_out = 1
+
+  security_groups            = ["${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
+  user_data                  = "${data.template_cloudinit_config.docker_ucp_worker.rendered}"
+  password                   = "${var.ssh_password}"
+}
+
+# resource "alicloud_eip" "docker_wkr" {
+#   bandwidth            = "5"
+#   internet_charge_type = "PayByBandwidth"
+# }
+
+# resource "alicloud_eip_association" "docker_wkr" {
+#   allocation_id = "${alicloud_eip.docker_wkr.id}"
+#   instance_id   = "${alicloud_instance.docker_wkr.id}"
+# }
+
+### Template script bash
 data "template_file" "install_docker_ee" {
   template = "${file("${path.module}/tpl/install_docker_ee.sh")}"
 
@@ -129,7 +159,7 @@ data "template_file" "install_docker_ucp" {
   template = "${file("${path.module}/tpl/install_docker_ucp.sh")}"
 }
 
-data "template_cloudinit_config" "docker_ucp" {
+data "template_cloudinit_config" "docker_ucp_manager" {
   gzip          = false
   base64_encode = false
 
@@ -142,5 +172,14 @@ data "template_cloudinit_config" "docker_ucp" {
     content_type = "text/x-shellscript"
     content      = "${data.template_file.install_docker_ucp.rendered}"
   }
+}
 
+data "template_cloudinit_config" "docker_ucp_worker" {
+  gzip          = false
+  base64_encode = false
+
+  part {
+    content_type = "text/x-shellscript"
+    content      = "${data.template_file.install_docker_ee.rendered}"
+  }
 }

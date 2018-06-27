@@ -72,6 +72,11 @@ terraform plan|apply|destroy \
 ### Get Docker Enterprise Edition for Ubuntu Trial Url
 https://docs.docker.com/install/linux/docker-ee/ubuntu/
 
+### Add worker nodes
+https://docs.docker.com/ee/ucp/admin/install/#step-7-join-worker-nodes
 
+
+### Setup Docker Trusted Registry (DTR) on a worker node
+https://docs.docker.com/ee/dtr/admin/install/
 
 ## Issues
