@@ -128,7 +128,7 @@ resource "alicloud_instance" "docker_wkr" {
   image_id                   = "${var.image_id}"
   count                      = 3
 
-  vswitch_id                 = "${element(var.vswitchs_ids, 0)}"
+  vswitch_id                 = "${element(var.vswitchs_ids, count.index)}"
   internet_max_bandwidth_out = 1
 
   security_groups            = ["${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
