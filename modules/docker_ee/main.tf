@@ -25,6 +25,28 @@ resource "alicloud_security_group_rule" "allow_http_access" {
   cidr_ip           = "0.0.0.0/0"
 }
 
+resource "alicloud_security_group_rule" "allow_http_swarm_hc_access" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "8000/8000"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.web.id}"
+  cidr_ip           = "100.64.0.0/10" # IP address range for healthcheck
+}
+
+resource "alicloud_security_group_rule" "allow_http_swarm_k8s_access" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "34080/34080"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.web.id}"
+  cidr_ip           = "100.64.0.0/10" # IP address range for healthcheck
+}
+
 resource "alicloud_security_group_rule" "allow_https_access" {
   type              = "ingress"
   ip_protocol       = "tcp"
@@ -34,6 +56,28 @@ resource "alicloud_security_group_rule" "allow_https_access" {
   priority          = 1
   security_group_id = "${alicloud_security_group.web.id}"
   cidr_ip           = "0.0.0.0/0"
+}
+
+resource "alicloud_security_group_rule" "allow_https_swarm_hc_access" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "8443/8443"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.web.id}"
+  cidr_ip           = "100.64.0.0/10" # IP address range for healthcheck
+}
+
+resource "alicloud_security_group_rule" "allow_https_swarm_k8s_access" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "34443/34443"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.web.id}"
+  cidr_ip           = "100.64.0.0/10" # IP address range for healthcheck
 }
 
 resource "alicloud_security_group_rule" "allow_docker_swarm_access" {
@@ -64,6 +108,17 @@ resource "alicloud_security_group_rule" "allow_docker_network_udp_access" {
   nic_type          = "intranet"
   policy            = "accept"
   port_range        = "4789/4789"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.docker.id}"
+  cidr_ip           = "0.0.0.0/0"
+}
+
+resource "alicloud_security_group_rule" "allow_docker_network_kubectl_access" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "6443/6443"
   priority          = 1
   security_group_id = "${alicloud_security_group.docker.id}"
   cidr_ip           = "0.0.0.0/0"
@@ -103,7 +158,7 @@ resource "alicloud_instance" "docker_ucp_manager" {
   vswitch_id                 = "${element(var.vswitchs_ids, 0)}"
   internet_max_bandwidth_out = 1
 
-  security_groups            = ["${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
+  security_groups            = ["${alicloud_security_group.docker.id}", "${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
   user_data                  = "${data.template_cloudinit_config.docker_ucp_manager.rendered}"
   password                   = "${var.ssh_password}"
 }
@@ -131,7 +186,7 @@ resource "alicloud_instance" "docker_wkr" {
   vswitch_id                 = "${element(var.vswitchs_ids, count.index)}"
   internet_max_bandwidth_out = 1
 
-  security_groups            = ["${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
+  security_groups            = ["${alicloud_security_group.docker.id}", "${alicloud_security_group.web.id}", "${alicloud_security_group.ssh.id}"]
   user_data                  = "${data.template_cloudinit_config.docker_ucp_worker.rendered}"
   password                   = "${var.ssh_password}"
 }
@@ -145,6 +200,78 @@ resource "alicloud_instance" "docker_wkr" {
 #   allocation_id = "${alicloud_eip.docker_wkr.id}"
 #   instance_id   = "${alicloud_instance.docker_wkr.id}"
 # }
+
+### Public Load Balancer for Swarm
+resource "alicloud_slb" "web_swarm" {
+  name                 = "${var.name}_web_swarm_slb"
+  internet             = true
+  internet_charge_type = "paybytraffic"
+}
+
+resource "alicloud_slb_listener" "http_swarm" {
+  load_balancer_id          = "${alicloud_slb.web_swarm.id}"
+  backend_port              = 8000
+  frontend_port             = 80
+  bandwidth                 = 10
+  protocol                  = "tcp"
+  sticky_session            = "on"
+  sticky_session_type       = "insert"
+  cookie                    = "alicloud_${var.name}_web_swarm"
+  cookie_timeout            = 86400
+}
+
+resource "alicloud_slb_listener" "https_swarm" {
+  load_balancer_id          = "${alicloud_slb.web_swarm.id}"
+  backend_port              = 8443
+  frontend_port             = 443
+  bandwidth                 = 10
+  protocol                  = "tcp"
+  sticky_session            = "on"
+  sticky_session_type       = "insert"
+  cookie                    = "alicloud_${var.name}_web_swarm"
+  cookie_timeout            = 86400
+}
+
+resource "alicloud_slb_attachment" "web_swarm" {
+  load_balancer_id = "${alicloud_slb.web_swarm.id}"
+  instance_ids     = ["${alicloud_instance.docker_wkr.*.id}"]
+}
+
+### Public Load Balancer for K8S
+resource "alicloud_slb" "web_k8s" {
+  name                 = "${var.name}_web_k8s_slb"
+  internet             = true
+  internet_charge_type = "paybytraffic"
+}
+
+resource "alicloud_slb_listener" "http_k8s" {
+  load_balancer_id          = "${alicloud_slb.web_k8s.id}"
+  backend_port              = 34080
+  frontend_port             = 80
+  bandwidth                 = 10
+  protocol                  = "tcp"
+  sticky_session            = "on"
+  sticky_session_type       = "insert"
+  cookie                    = "alicloud_${var.name}_web_k8s"
+  cookie_timeout            = 86400
+}
+
+resource "alicloud_slb_listener" "https_k8s" {
+  load_balancer_id          = "${alicloud_slb.web_k8s.id}"
+  backend_port              = 34443
+  frontend_port             = 443
+  bandwidth                 = 10
+  protocol                  = "tcp"
+  sticky_session            = "on"
+  sticky_session_type       = "insert"
+  cookie                    = "alicloud_${var.name}_web_k8s"
+  cookie_timeout            = 86400
+}
+
+resource "alicloud_slb_attachment" "web_k8s" {
+  load_balancer_id = "${alicloud_slb.web_k8s.id}"
+  instance_ids     = ["${alicloud_instance.docker_wkr.*.id}"]
+}
 
 ### Template script bash
 data "template_file" "install_docker_ee" {
