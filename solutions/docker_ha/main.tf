@@ -1,3 +1,7 @@
+provider "alicloud" {
+	region	= "eu-central-1"
+}
+
 module "docker_ee" {
   source       = "../../modules/docker_ee"
   name         = "${var.name}"

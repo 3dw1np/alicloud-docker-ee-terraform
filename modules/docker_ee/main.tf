@@ -36,6 +36,17 @@ resource "alicloud_security_group_rule" "allow_http_swarm_hc_access" {
   cidr_ip           = "100.64.0.0/10" # IP address range for healthcheck
 }
 
+resource "alicloud_security_group_rule" "allow_http_swarm_hc_access_tmp" {
+  type              = "ingress"
+  ip_protocol       = "tcp"
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = "8080/8080"
+  priority          = 1
+  security_group_id = "${alicloud_security_group.web.id}"
+  cidr_ip           = "0.0.0.0/0"
+}
+
 resource "alicloud_security_group_rule" "allow_http_swarm_k8s_access" {
   type              = "ingress"
   ip_protocol       = "tcp"

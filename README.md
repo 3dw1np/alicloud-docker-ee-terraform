@@ -82,7 +82,6 @@ To finalise the setup of the cluster by adding the worker nodes, you need to log
 ### Setup SSL
 https://docs.docker.com/datacenter/dtr/2.0/configure/config-security/#install-registry-certificates-on-client-docker-daemons
 ```bash
-export DOMAIN_NAME=dtr.docker.alicloudlabs.win
 export DOMAIN_NAME=dtr.yourdomain.com
 openssl s_client -connect $DOMAIN_NAME:443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM | sudo tee /usr/local/share/ca-certificates/$DOMAIN_NAME.crt
 sudo update-ca-certificates
